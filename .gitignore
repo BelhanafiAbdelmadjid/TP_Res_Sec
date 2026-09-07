@@ -1,0 +1,16 @@
+# Captures Wireshark / tcpdump
+*.pcap
+*.pcapng
+
+# Sorties de diagnostic
+diag-*.txt
+*.log
+
+# Editeurs
+*~
+*.swp
+.vscode/
+.idea/
+
+# OS
+.DS_Store

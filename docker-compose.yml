@@ -1,0 +1,59 @@
+name: tp1-reseau
+
+# Le plan d'adressage vient du fichier .env. Les valeurs par defaut ci dessous
+# servent de repli si le .env est absent.
+
+services:
+  serveur:
+    build: ./serveur
+    container_name: tp1-serveur
+    hostname: serveur
+    environment:
+      # Etape 4 du sujet : passer a des ports arbitraires sans toucher au code.
+      SMTP_PORT: "25"
+      POP3_PORT: "110"
+      # Reseau autorise a relayer, injecte dans la config exim4 au demarrage.
+      RELAY_NETS: "${LAN_SUBNET:-10.99.0.0/24}"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      lan:
+        ipv4_address: "${IP_SERVEUR:-10.99.0.10}"
+        aliases:
+          - mail.tp.local
+
+  client:
+    build: ./client
+    container_name: tp1-client
+    hostname: client
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      lan:
+        ipv4_address: "${IP_CLIENT:-10.99.0.20}"
+
+  # Conteneur pose pour le binome qui traite la partie attaque.
+  attaquant:
+    build: ./attaquant
+    container_name: tp1-attaquant
+    hostname: attaquant
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      lan:
+        ipv4_address: "${IP_ATTAQUANT:-10.99.0.30}"
+
+networks:
+  lan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "${LAN_SUBNET:-10.99.0.0/24}"
+          gateway: "${LAN_GATEWAY:-10.99.0.1}"
