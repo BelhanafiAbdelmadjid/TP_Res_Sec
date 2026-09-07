@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       openssl \
       ssl-cert \
       telnet \
+      openbsd-inetd \
+      inetutils-telnetd \
+      tcpd \
       netcat-openbsd \
       mailutils \
       iproute2 \
@@ -31,10 +34,18 @@ RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/healthcheck.sh
 RUN useradd -m -s /bin/bash alice && echo 'alice:alice' | chpasswd \
  && useradd -m -s /bin/bash bob   && echo 'bob:bob'     | chpasswd
 
+# --- TELNET (§2 du sujet) ----------------------------------------------------
+# inetutils-telnetd s'enregistre dans /etc/inetd.conf en '#<off>#' (desactive).
+# update-inetd --enable retire ce marqueur pour que le superdaemon serve le 23.
+RUN update-inetd --enable telnet
+# Compte de test dedie telnet (login qui circulera EN CLAIR, cf. §7).
+RUN useradd -m -s /bin/bash tptelnet && echo 'tptelnet:tptelnet123' | chpasswd
+
 ENV SMTP_PORT=25
 ENV POP3_PORT=110
+ENV TELNET_PORT=23
 
-EXPOSE 25 110
+EXPOSE 23 25 110
 
 # Un conteneur "Up" ne prouve pas que les deux services ecoutent.
 HEALTHCHECK --interval=10s --timeout=5s --start-period=25s --retries=3 \

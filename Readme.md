@@ -341,3 +341,20 @@ pose problème dans le conteneur, décommenter le bloc `passdb shadow` de
 
 Mail bloqué en file d'attente : `exim4 -bp` pour lister, `exim4 -qff` pour forcer
 un passage, `/var/log/exim4/mainlog` pour la raison exacte.
+## Partie TELNET (§2) — ajout du binôme telnet
+
+Le serveur héberge aussi un service **TELNET** (port 23), lancé par le
+superdaemon `inetd`. Détails, choix de config et tableau des faiblesses dans
+[`rapport-partie-telnet.md`](rapport-partie-telnet.md).
+
+Vérifier / tester :
+
+```bash
+docker compose exec serveur netstat -antp | grep ':23'   # 0.0.0.0:23 LISTEN inetd
+docker compose exec client telnet 10.99.0.10             # login tptelnet / tptelnet123
+```
+
+Fichiers concernés : `serveur/Dockerfile` (paquets inetd + telnetd + tcpd,
+compte `tptelnet`, `update-inetd --enable telnet`), `serveur/entrypoint.sh`
+(démarrage d'`inetd`, port telnet variable pour le §4), `serveur/healthcheck.sh`
+(le port 23 doit écouter), `docker-compose.yml` (`TELNET_PORT`).

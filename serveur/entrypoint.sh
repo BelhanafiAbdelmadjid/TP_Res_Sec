@@ -3,6 +3,7 @@ set -u
 
 SMTP_PORT="${SMTP_PORT:-25}"
 POP3_PORT="${POP3_PORT:-110}"
+TELNET_PORT="${TELNET_PORT:-23}"
 RELAY_NETS="${RELAY_NETS:-10.99.0.0/24}"
 
 DOVECOT_LOG=/var/log/dovecot.log
@@ -51,6 +52,16 @@ EXIM_PID=$!
 dovecot -F >> "${DOVECOT_LOG}" 2>&1 &
 DOVECOT_PID=$!
 
+# --- TELNET (§2) : demarrage du superdaemon inetd ---------------------------
+# inetd ecoute le port du service 'telnet' (23 par defaut, resolu via
+# /etc/services) et lance in.telnetd a chaque connexion entrante. Pour le §4
+# (ports arbitraires) on reecrit la ligne de /etc/services si TELNET_PORT != 23.
+# inetd se detache tout seul en tache de fond, il ne bloque donc pas ce script.
+if [ "${TELNET_PORT}" != "23" ]; then
+  sed -i -E "s#^telnet[[:space:]]+23/tcp#telnet\t\t${TELNET_PORT}/tcp#" /etc/services
+fi
+/etc/init.d/openbsd-inetd restart >/dev/null 2>&1 || /etc/init.d/openbsd-inetd start
+
 # Arret propre, sinon Docker attend dix secondes avant le SIGKILL.
 trap 'kill -TERM "${EXIM_PID}" "${DOVECOT_PID}" "${TAIL_PID}" 2>/dev/null; exit 0' TERM INT
 
@@ -72,8 +83,10 @@ done
 echo "-----------------------------------------------"
 echo "SMTP (exim4)    : port ${SMTP_PORT}"
 echo "POP3 (dovecot)  : port ${POP3_PORT}"
+echo "TELNET (inetd)  : port ${TELNET_PORT}"
 echo "Relais autorise : ${RELAY_NETS}"
-echo "Comptes         : alice/alice et bob/bob"
+echo "Comptes mail    : alice/alice et bob/bob"
+echo "Compte telnet   : tptelnet/tptelnet123"
 echo "Ports en ecoute :"
 ss -ltn | tail -n +2
 echo "-----------------------------------------------"

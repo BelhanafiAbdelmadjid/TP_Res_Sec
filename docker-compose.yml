@@ -12,6 +12,7 @@ services:
       # Etape 4 du sujet : passer a des ports arbitraires sans toucher au code.
       SMTP_PORT: "25"
       POP3_PORT: "110"
+      TELNET_PORT: "23"
       # Reseau autorise a relayer, injecte dans la config exim4 au demarrage.
       RELAY_NETS: "${LAN_SUBNET:-10.99.0.0/24}"
     cap_add:
